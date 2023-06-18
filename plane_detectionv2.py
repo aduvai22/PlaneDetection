@@ -319,7 +319,7 @@ def calc_opposite_point(p0, p1, length=5.0, to_int=True):
 def test_PlaneDetector():    
 
     #create paths and load data
-    folder = './bagfiles/data5/'
+    folder = './data/data5/'
     file = 'data5_0'
     # rgb_folder = './bagfiles/rgb_folder/'
     # rgb_file = 'rosbag2_2023_04_12-17_57_22'
@@ -371,31 +371,40 @@ def test_PlaneDetector():
     f_depth = f_depth.reshape(480,640)
     x,y,w,h = 195,115,250,250
     f_depth = f_depth[y:y+h, x:x+w]
+    # f_depth = cv2.resize(f_depth, (250, 250))
     depth_img = open3d.geometry.Image(f_depth)
     rgbd = open3d.geometry.RGBDImage.create_from_color_and_depth(rgb_img, depth_img, convert_rgb_to_intensity=True)
 
-    # plt.subplot(1, 3, 1)
-    # plt.title('Grayscale image')
-    # plt.imshow(rgbd.color)
-    # plt.subplot(1, 3, 2)
-    # plt.title('Depth image')
-    # plt.imshow(rgbd.depth)
-    # plt.subplot(1, 3, 3)
-    # plt.title('Raw Depth image')
-    # plt.imshow(f_depth)
-    # plt.show()
     # -- Read color image and depth images
-    img_color = cv2.imread("images/rgb3.png", cv2.IMREAD_UNCHANGED)
-    img_depth = cv2.imread("images/depth2.png", cv2.IMREAD_UNCHANGED)
+    # img_color = cv2.imread("images/rgb3.png", cv2.IMREAD_UNCHANGED)
+    # img_depth = cv2.imread("images/depth2.png", cv2.IMREAD_UNCHANGED)
     img_color = (255*np.asarray(rgbd.color)).astype(np.uint8)
-    img_depth = (255*np.asarray(rgbd.depth)).astype(np.uint8)
-    # plt.subplot(1, 2, 1)
-    # plt.title('Grayscale image')
-    # plt.imshow(img_color)
-    # plt.subplot(1, 2, 2)
-    # plt.title('Depth image')
-    # plt.imshow(img_depth)
-    # plt.show()
+    img_depth = (255*np.asarray(f_depth)).astype(np.uint8)
+    # ksize
+    ksize = (6, 6)
+    
+    # Using cv2.blur() method 
+    # blur = cv2.blur(img_depth, ksize)
+    kernel = np.ones(ksize, np.uint8)
+    img_dilation = cv2.dilate(img_depth, kernel, iterations=2)
+    img_erosion = cv2.erode(img_dilation, kernel, iterations=1)
+    edges = cv2.Canny(img_erosion,100,200)
+    plt.subplot(1, 5, 1)
+    plt.title('Grayscale image')
+    plt.imshow(img_color)
+    plt.subplot(1, 5, 2)
+    plt.title('Depth image')
+    plt.imshow(f_depth)
+    plt.subplot(1, 5, 3)
+    plt.title('Image Dilation')
+    plt.imshow(img_dilation)
+    plt.subplot(1, 5, 4)
+    plt.title('Image Erosion')
+    plt.imshow(img_erosion)
+    plt.subplot(1, 5, 5)
+    plt.title('Detected Edges')
+    plt.imshow(edges)
+    plt.show()
     
     
     config_file = "config/plane_detector_config.yaml"
